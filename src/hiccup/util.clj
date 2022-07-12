@@ -3,6 +3,8 @@
   (:import java.net.URI
            java.net.URLEncoder))
 
+(def ^:dynamic ^:no-doc *html-mode* :xhtml)
+
 (def ^:dynamic ^:no-doc *escape-strings?* true)
 
 (def ^:dynamic ^:no-doc *base-url* nil)
@@ -32,3 +34,24 @@
 
 (defn ^String as-str [& xs]
   (apply str (map to-str xs)))
+
+
+(deftype RawString [^String s]
+  Object
+  (^String toString [this] s)
+  (^boolean equals [this other]
+   (and (instance? RawString other)
+        (= s (.toString other)))))
+
+(defn raw-string {:arglists '([& xs])}
+  ([] (RawString. ""))
+  ([x] (RawString. (str x)))
+  ([x & xs] (RawString. (apply str x xs))))
+
+(defn escape-html [text]
+  (.. ^String (as-str text)
+      (replace "&" "&amp;")
+      (replace "<" "&lt;")
+      (replace ">" "&gt;")
+      (replace "\"" "&quot;")
+      (replace "'" (if (= *html-mode* :sgml) "&#39;" "&apos;"))))
